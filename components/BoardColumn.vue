@@ -16,27 +16,50 @@ const boardStore = useBoardStore();
 const router = useRouter();
 
 const editNameState = ref(false);
-const newTaskName = ref('')
+const newTaskName = ref("");
 
 function addTask() {
     boardStore.addTask({
         taskName: newTaskName.value,
-        columnIndex: props.columnIndex
-    })
-    newTaskName.value = ''
+        columnIndex: props.columnIndex,
+    });
+    newTaskName.value = "";
 }
 
 function deleteColumn(columnIndex) {
     boardStore.deleteColumn(columnIndex);
 }
 
+function dropTask(event, toColumnIndex) {
+    const fromColumnIndex = event.dataTransfer.getData('from-column-index')
+    const fromTaskIndex = event.dataTransfer.getData('from-task-index')
+    console.log({ fromColumnIndex, fromTaskIndex });
+
+    boardStore.moveTask({
+        taskIndex: fromTaskIndex,
+        fromColumnIndex,
+        toColumnIndex
+    })
+}
+
 function goToTask(taskId) {
     router.push(`/tasks/${taskId}`);
+}
+
+function pickupTask(event, { fromColumnIndex, fromTaskIndex }) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.dropEffect = 'move'
+    event.dataTransfer.setData('from-column-index', fromColumnIndex)
+    event.dataTransfer.setData('from-task-index', fromTaskIndex)
 }
 </script>
 
 <template>
-    <UContainer class="column">
+    <UContainer
+        class="column"
+        @dragenter.prevent
+        @dragover.prevent
+        @drop.stop="dropTask($event, columnIndex)">
         <div class="column-header mb-4">
             <div>
                 <UInput
@@ -61,8 +84,16 @@ function goToTask(taskId) {
             </div>
         </div>
         <ul>
-            <li v-for="task in column.tasks" :key="task.id">
-                <UCard class="mb-4" @click="goToTask(task.id)">
+            <li v-for="( task, taskIndex ) in column.tasks" :key="task.id">
+                <UCard
+                    class="mb-4"
+                    @click="goToTask(task.id)"
+                    draggable="true"
+                    @dragstart="pickupTask($event, {
+                        fromColumnIndex: columnIndex,
+                        fromTaskIndex: taskIndex
+                    })"
+                >
                     <strong>{{ task.name }}</strong>
                     <p>{{ task.description }}</p>
                 </UCard>
