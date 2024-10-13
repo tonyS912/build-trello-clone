@@ -31,23 +31,24 @@ function deleteColumn(columnIndex) {
     boardStore.deleteColumn(columnIndex);
 }
 
-function dropItem(event, toColumnIndex) {
-    const type = event.dataTransfer.getData('type')
-    const fromColumnIndex = event.dataTransfer.getData('from-column-index')
+function dropItem(event, { toColumnIndex, toTaskIndex }) {
+    const type = event.dataTransfer.getData("type");
+    const fromColumnIndex = event.dataTransfer.getData("from-column-index");
 
-    if (type === 'task') {
-        const fromTaskIndex = event.dataTransfer.getData('from-task-index')
-    
+    if (type === "task") {
+        const fromTaskIndex = event.dataTransfer.getData("from-task-index");
+
         boardStore.moveTask({
-            taskIndex: fromTaskIndex,
+            fromTaskIndex,
+            toTaskIndex,
             fromColumnIndex,
-            toColumnIndex
-        })
-    } else if (type === 'column') {
+            toColumnIndex,
+        });
+    } else if (type === "column") {
         boardStore.moveColumn({
             fromColumnIndex,
-            toColumnIndex
-        })
+            toColumnIndex,
+        });
     }
 }
 
@@ -56,18 +57,18 @@ function goToTask(taskId) {
 }
 
 function pickupColumn(event, fromColumnIndex) {
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.dropEffect = 'move'
-    event.dataTransfer.setData('type', 'column')
-    event.dataTransfer.setData('from-column-index', fromColumnIndex)
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.dropEffect = "move";
+    event.dataTransfer.setData("type", "column");
+    event.dataTransfer.setData("from-column-index", fromColumnIndex);
 }
 
 function pickupTask(event, { fromColumnIndex, fromTaskIndex }) {
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.dropEffect = 'move'
-    event.dataTransfer.setData('type', 'task')
-    event.dataTransfer.setData('from-column-index', fromColumnIndex)
-    event.dataTransfer.setData('from-task-index', fromTaskIndex)
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.dropEffect = "move";
+    event.dataTransfer.setData("type", "task");
+    event.dataTransfer.setData("from-column-index", fromColumnIndex);
+    event.dataTransfer.setData("from-task-index", fromTaskIndex);
 }
 </script>
 
@@ -78,7 +79,8 @@ function pickupTask(event, { fromColumnIndex, fromTaskIndex }) {
         @dragstart.self="pickupColumn($event, columnIndex)"
         @dragenter.prevent
         @dragover.prevent
-        @drop.stop="dropItem($event, columnIndex)">
+        @drop.stop="dropItem($event, { toColumnIndex: columnIndex})"
+    >
         <div class="column-header mb-4">
             <div>
                 <UInput
@@ -103,15 +105,21 @@ function pickupTask(event, { fromColumnIndex, fromTaskIndex }) {
             </div>
         </div>
         <ul>
-            <li v-for="( task, taskIndex ) in column.tasks" :key="task.id">
+            <li v-for="(task, taskIndex) in column.tasks" :key="task.id">
                 <UCard
                     class="mb-4"
                     @click="goToTask(task.id)"
                     draggable="true"
-                    @dragstart="pickupTask($event, {
-                        fromColumnIndex: columnIndex,
-                        fromTaskIndex: taskIndex
-                    })"
+                    @dragstart="
+                        pickupTask($event, {
+                            fromColumnIndex: columnIndex,
+                            fromTaskIndex: taskIndex,
+                        })
+                    "
+                    @drop.stop="
+                        dropItem($event, { toColumnIndex: columnIndex,
+                            toTaskIndex: taskIndex })
+                    "
                 >
                     <strong>{{ task.name }}</strong>
                     <p>{{ task.description }}</p>
