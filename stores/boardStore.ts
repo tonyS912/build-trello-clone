@@ -48,8 +48,9 @@ export const useBoardStore = defineStore('boardStore', () => {
      * Columns Code
      * @param columnName 
      */
-    function addColumn(columnName) {
+    function addColumn(columnName: string) {
         board.value.columns.push({
+            id: uuid(),
             name: columnName,
             tasks: []
         })
