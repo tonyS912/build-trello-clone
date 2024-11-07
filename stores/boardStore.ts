@@ -6,7 +6,6 @@ import boardData from '~/data/board.json'
 export const useBoardStore = defineStore('boardStore', () => {
     const board = useStorage('board', boardData)
 
-
     /**
      * Task Code
      */
